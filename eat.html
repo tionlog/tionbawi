@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111111" />
+    <title>맛있게 먹기</title>
+  </head>
+  <body>
+    <img id="camera-fallback" src="./chef-stage-face.png" alt="" />
+    <video id="camera" autoplay muted playsinline aria-label="내 카메라 화면"></video>
+    <canvas id="mouth-zoom" aria-hidden="true"></canvas>
+    <img id="flying-bread" src="./salt-bread.png" alt="" hidden />
+    <div id="crumbs" aria-hidden="true" hidden></div>
+    <a id="home-link" href="./">처음으로</a>
+    <p id="camera-status" role="status" hidden></p>
+    <script type="module" src="/src/eat.ts"></script>
+  </body>
+</html>
