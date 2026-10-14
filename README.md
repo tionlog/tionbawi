@@ -39,25 +39,23 @@ npm run build
 
 ## GitHub Pages 배포
 
-이 폴더를 GitHub의 `suhsih` 저장소에 올리면 `.github/workflows/deploy.yml`이 `main` 브랜치로 push될 때 사이트를 빌드하고 Pages에 배포합니다. 저장소 이름이 `suhsih`이면 주소는 `https://tionlog.github.io/suhsih/`입니다.
+이 프로젝트는 GitHub의 `tionlog/tionbawi` 저장소에 연결되어 있습니다. `vite.config.ts`의 상대 경로 설정(`base: './'`)으로 `/tionbawi/` 아래에서도 HTML, 번들, 모델 파일을 불러옵니다. 공개 주소는 `https://tionlog.github.io/tionbawi/`입니다. `.github/workflows/deploy.yml`은 `main` 브랜치로 push될 때 `npm ci`와 `npm run build`를 실행한 뒤 `dist` 폴더를 Pages에 배포합니다.
 
-1. GitHub에서 `tionlog` 계정으로 새 **공개 저장소 `suhsih`**를 만듭니다. README, 라이선스, `.gitignore` 자동 생성은 선택하지 않습니다.
-2. 저장소의 **Settings → Secrets and variables → Actions → New repository secret**에서 다음 두 항목을 추가합니다. 값은 로컬 `.env.local`에 있는 것을 사용합니다.
+GitHub에서 최초 한 번 다음 설정이 필요합니다.
+
+1. 저장소의 **Settings → Secrets and variables → Actions → New repository secret**에서 다음 두 항목을 추가합니다. 값은 로컬 `.env.local`에 있는 것을 사용합니다.
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
-3. 터미널에서 프로젝트 폴더로 이동해 최초 push를 합니다.
+2. 저장소의 **Settings → Pages → Build and deployment → Source**를 **GitHub Actions**로 설정합니다. `Deploy from a branch`에서 `main / (root)`를 사용하면 Vite가 빌드되기 전의 HTML과 TypeScript가 게시되어 화면이 비어 보입니다.
+3. `main`에 push하면 **Actions → Deploy to GitHub Pages**가 빌드한 파일을 게시합니다. 작업이 성공하면 `https://tionlog.github.io/tionbawi/`에서 확인합니다.
 
-   ```sh
-   cd /Users/sihyeon/Desktop/suhsih
-   git init -b main
-   git add .
-   git commit -m "Create suhsih site"
-   git remote add origin https://github.com/tionlog/suhsih.git
-   git push -u origin main
-   ```
+이후에는 프로젝트 폴더에서 변경사항을 commit하고 `main`에 push할 때마다 자동 배포됩니다.
 
-4. GitHub 저장소의 **Settings → Pages → Build and deployment → Source**에서 **GitHub Actions**를 선택합니다.
-5. 저장소의 **Actions** 탭에서 `Deploy to GitHub Pages` 작업이 성공하면 `https://tionlog.github.io/suhsih/`에서 확인합니다. 이후에는 `main`에 push할 때마다 자동 배포됩니다.
+```sh
+git add .
+git commit -m "Update site"
+git push
+```
 
 `.env.local`은 `.gitignore`에 포함되어 push되지 않습니다. 공개용 Supabase publishable key만 Actions secret으로 등록하세요. 서비스 역할 키는 브라우저용 사이트에 사용하지 마세요.
 
