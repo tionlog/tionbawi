@@ -1,7 +1,7 @@
 export type Comment = { id: string; name: string; message: string; created_at: string }
 const url = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, '')
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
-const endpoint = url ? `${url}/rest/v1/suhsih_comments` : ''
+const endpoint = url ? `${url}/rest/v1/${encodeURIComponent('tionbawi comm')}` : ''
 const headers = key ? { apikey: key, ...(!key.startsWith('sb_publishable_') ? { Authorization: `Bearer ${key}` } : {}) } : undefined
 
 async function requestError(response: Response, fallback: string): Promise<Error> {

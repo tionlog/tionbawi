@@ -22,7 +22,7 @@ npm run build
 
 `supabase/schema.sql`을 해당 프로젝트의 SQL Editor에서 한 번 실행하세요. 현재 제공된 공개 키만으로는 테이블을 생성할 수 없습니다. 로컬 연결값은 `.env.local`에 설정되어 있으며 Git에서 제외됩니다. 다른 환경에서는 `.env.example`을 참고하세요.
 
-코멘트 요청에 `404 / PGRST205`가 나오면 연결 키 문제가 아니라 `public.suhsih_comments` 테이블이 해당 프로젝트에 없는 상태입니다. Supabase 대시보드에서 프로젝트 `rtrxnbyoismgrutqihiq`를 선택한 다음 **SQL Editor → New query**에 `supabase/schema.sql` 전체를 붙여 넣고 **Run**을 누르세요. 이후 **Table Editor**에서 `suhsih_comments`가 보이는지 확인하고 사이트를 새로고침하면 됩니다. 이 SQL은 여러 번 실행해도 테이블의 기존 코멘트를 삭제하지 않습니다.
+코멘트 테이블 이름은 공백을 포함한 `public."tionbawi comm"`입니다. 브라우저에서는 URL에 공백을 `%20`으로 인코딩해서 요청합니다. `404 / PGRST205`가 나오면 테이블 이름을 확인하세요. 쓰기 권한 오류가 나오면 Supabase 대시보드에서 프로젝트 `rtrxnbyoismgrutqihiq`를 선택한 다음 **SQL Editor → New query**에 `supabase/schema.sql` 전체를 붙여 넣고 **Run**을 누르세요. 이 SQL은 기존 코멘트를 삭제하지 않고 읽기·쓰기 권한과 정책을 설정합니다.
 
 공개용 publishable 키만 클라이언트에 넣으세요. 서비스 역할 키는 넣지 마세요. SQL은 익명 방문자에게 코멘트 읽기·쓰기만 허용하고, 길이 제한을 데이터베이스에서도 검사합니다. 공개 쓰기이므로 운영 시 스팸 방지가 필요할 수 있습니다.
 
