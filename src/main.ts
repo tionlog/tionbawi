@@ -16,7 +16,7 @@ const cupsMarkup = centers.map((x, i) => `<g class="cup" data-cup="${i}" tabinde
   <ellipse cx="487" cy="888" rx="151" ry="19" fill="#4c514c" opacity=".14"/>
   <ellipse cx="487" cy="879" rx="153" ry="23" fill="url(#plate-metal)"/>
   <ellipse cx="487" cy="872" rx="142" ry="16" fill="url(#plate-inside)"/>
-  ${i === 1 ? `<ellipse class="bread-shadow" cx="487" cy="867" rx="73" ry="10" fill="#66513a" opacity=".22"/><image class="bread" href="${asset('salt-bread.png')}" x="398" y="771" width="178" height="119"/>` : ''}
+  ${i === 1 ? `<ellipse class="bread-shadow" cx="487" cy="867" rx="73" ry="10" fill="#66513a" opacity=".22"/><image class="bread" href="${asset('salt-bread.png?v=2')}" x="398" y="771" width="178" height="119"/>` : ''}
   <g class="lid ${i === 1 ? 'lid-open' : ''}"><image href="${asset('chef.png')}" width="1024" height="1024" clip-path="url(#lid-mask)"/><path class="cup-outline" d="${lidPath}" fill="transparent" stroke="white" stroke-width="7"/></g>
  </g>`).join('')
 
@@ -48,7 +48,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
  <div class="result-panel" hidden><h1 class="result-title"></h1><button class="restart" type="button">다시할래</button></div>
  <section class="success-screen" hidden aria-label="성공 화면">
   <div class="success-card"><h1>성공!</h1><p>맛있게 먹어~</p><div class="success-actions"><button class="play-again" type="button">한판 더~</button><button class="eat-bread" type="button">맛있게 먹기 (입 벌리고 준비) →</button></div></div>
-  <div class="success-figure"><img class="success-default" src="${asset('success.png')}" alt="의기양양한 요리사가 소금빵 접시를 내민 모습"><img class="success-stage" src="${asset('success-stage.png')}" alt=""><canvas class="success-face" width="256" height="274" aria-label="요리사 얼굴에 합성된 내 모습"></canvas><img class="success-hat" src="${asset('success-stage.png')}" alt=""><img class="success-bread" src="${asset('salt-bread.png')}" alt="접시에 놓인 소금빵"></div>
+  <div class="success-figure"><img class="success-default" src="${asset('success.png')}" alt="의기양양한 요리사가 소금빵 접시를 내민 모습"><img class="success-stage" src="${asset('success-stage.png')}" alt=""><canvas class="success-face" width="256" height="274" aria-label="요리사 얼굴에 합성된 내 모습"></canvas><img class="success-hat" src="${asset('success-stage.png')}" alt=""><img class="success-bread" src="${asset('salt-bread.png?v=2')}" alt="접시에 놓인 소금빵"></div>
  </section>
  <section class="comment-panel" hidden aria-label="코멘트 남기기"><h2>코멘트 남기기</h2><form class="comment-form"><label class="message-field"><span class="sr-only">하고 싶은 말</span><textarea name="message" maxlength="300" placeholder="야바위 푸드로 마라샹궈도 추가 부탁해~" required></textarea></label><label class="name-field">From. <input name="name" maxlength="30" placeholder="이름" required></label><button type="submit" class="send">~전송~</button><p class="form-status" role="status"></p></form></section>
 </section></main>
