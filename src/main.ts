@@ -4,6 +4,7 @@ import { createFaceTracker } from './face'
 import { createSuccessFace } from './success-face'
 import { CAMERA_MIRRORED } from './camera'
 import { addComment, commentsReady, listComments, type Comment } from './comments'
+import { endAllScenarios, endScenario, startScenario, trackEvent } from './analytics'
 
 const base = import.meta.env.BASE_URL
 const lidPath = 'M470 730 L471 713 Q461 692 484 691 Q508 693 495 714 L497 730 Q584 741 612 851 Q615 859 607 865 Q490 887 357 861 Q353 857 357 844 Q373 746 470 730 Z'
@@ -88,8 +89,8 @@ async function startCamera() {
   if (cameraLoading || tracker.getActive()) return
   cameraAttempted = true
   cameraLoading = true
-  try { await tracker.start() }
-  catch { /* The default chef face remains visible when camera access fails. */ }
+  try { await tracker.start(); if (tracker.getActive()) trackEvent('camera_ready', { screen: 'game' }) }
+  catch { trackEvent('camera_unavailable', { screen: 'game' }) }
   finally { cameraLoading = false }
 }
 for (const [selector, hint] of [['.primary', shuffleHint], ['.secondary', faceHint]] as const) {
@@ -118,6 +119,8 @@ function measure() {
 function renderLayout() {
   layoutFrame = 0
   const progress = phase === 'choose' || phase === 'failure' || phase === 'success' ? 1 : Math.min(1, Math.max(0, window.scrollY / (viewHeight * .6)))
+  if ((phase === 'home' || phase === 'shuffling') && progress > .55) startScenario('face_view')
+  else endScenario('face_view', phase === 'home' || phase === 'shuffling' ? 'scroll_back' : 'next_stage')
   const size = homeSize + (faceSize - homeSize) * progress
   const top = homeTop + (faceTop - homeTop) * progress
   artwork.style.transform = `translate3d(-50%, ${top}px, 0) scale(${size / homeSize})`
@@ -141,6 +144,7 @@ function scheduleLayout() { if (!layoutFrame) layoutFrame = requestAnimationFram
 window.addEventListener('scroll', scheduleLayout, { passive: true })
 window.addEventListener('resize', measure)
 measure()
+startScenario('home')
 
 let audioContext: AudioContext | undefined
 let noiseBuffer: AudioBuffer | undefined
@@ -197,7 +201,9 @@ function settleCups() {
   cups.forEach((cup, index) => { cup.style.transform = `translate3d(${centers[slots[index]!]! - 487}px, 0, 0)` })
   window.setTimeout(() => {
     if (phase !== 'shuffling') return
+    endScenario('shuffle', 'completed')
     phase = 'choose'; viewport.dataset.phase = phase
+    startScenario('choose')
     pickPrompt.hidden = false
     scheduleLayout()
     cups.forEach(cup => cup.setAttribute('tabindex', '0'))
@@ -225,6 +231,8 @@ function stir() {
   unlockAudio()
   if (!cameraAttempted) void startCamera()
   if (phase === 'home') {
+    endScenario('home', 'shuffle')
+    startScenario('shuffle')
     phase = 'shuffling'; viewport.dataset.phase = phase
     shuffleHint.hidden = true; faceHint.hidden = true
     showBread(false)
@@ -282,7 +290,11 @@ function pick(cupIndex: number) {
   cups.forEach(cup => cup.setAttribute('tabindex', '-1'))
   pickPrompt.hidden = true
   const successful = attempts > 1 && crypto.getRandomValues(new Uint8Array(1))[0]! % 2 === 0
+  trackEvent('cup_selected', { cup_number: slotOf(cupIndex) + 1, attempt_number: attempts, result: successful ? 'success' : 'failure' })
+  endScenario('choose', 'selected')
+  endScenario('face_view', 'next_stage')
   phase = successful ? 'success' : 'failure'; viewport.dataset.phase = phase
+  startScenario(phase)
   if (successful) {
     successScreen.hidden = false
     updateSuccessFace()
@@ -324,6 +336,9 @@ function updateSuccessFace() {
   successFrame = requestAnimationFrame(updateSuccessFace)
 }
 function restart() {
+  if (phase !== 'failure' && phase !== 'success') return
+  endScenario(phase === 'failure' ? 'failure' : 'success', 'restart')
+  startScenario('home')
   clearTimeout(shuffleTimer); shuffleTimer = 0
   readyAt = performance.now() + 3000; resetRub()
   shuffleHint.hidden = true; faceHint.hidden = true
@@ -345,12 +360,16 @@ function restart() {
 get<HTMLButtonElement>('.restart').addEventListener('click', restart)
 luckyLetter.addEventListener('click', () => {
   if (phase !== 'failure') return
+  trackEvent('lucky_letter_opened')
   const message = get<HTMLTextAreaElement>('.comment-form textarea')
   message.focus({ preventScroll: true })
   message.scrollIntoView({ block: 'nearest', behavior: reducedMotion.matches ? 'instant' : 'smooth' })
 })
 get<HTMLButtonElement>('.play-again').addEventListener('click', restart)
-get<HTMLButtonElement>('.eat-bread').addEventListener('click', () => { window.location.href = `${base}eat.html` })
+get<HTMLButtonElement>('.eat-bread').addEventListener('click', () => {
+  endScenario('success', 'eat_page')
+  window.location.href = `${base}eat.html`
+})
 
 let comments: Comment[] = []
 const list = get<HTMLDivElement>('.comments-list')
@@ -380,10 +399,11 @@ get<HTMLFormElement>('.comment-form').addEventListener('submit', async event => 
   const send = get<HTMLButtonElement>('.send'); send.disabled = true; status.textContent = '전송 중…'
   try {
     const saved = await addComment(name, message)
+    trackEvent('comment_submitted')
     comments.unshift(saved); renderComments(); form.reset(); status.textContent = '전송했어요.'
     get<HTMLParagraphElement>('.comments-status').textContent = ''
-  } catch (error) { status.textContent = error instanceof Error ? error.message : '전송에 실패했어요.' }
+  } catch (error) { trackEvent('comment_submit_failed'); status.textContent = error instanceof Error ? error.message : '전송에 실패했어요.' }
   finally { send.disabled = false }
 })
 document.addEventListener('visibilitychange', () => { if (document.hidden) audio.pause() })
-window.addEventListener('pagehide', () => { clearTimeout(shuffleTimer); tracker.stop(); audio.pause(); cancelAnimationFrame(shuffleFrame); cancelAnimationFrame(successFrame); cancelAnimationFrame(layoutFrame); void audioContext?.close() })
+window.addEventListener('pagehide', () => { endAllScenarios('page_exit'); clearTimeout(shuffleTimer); tracker.stop(); audio.pause(); cancelAnimationFrame(shuffleFrame); cancelAnimationFrame(successFrame); cancelAnimationFrame(layoutFrame); void audioContext?.close() })

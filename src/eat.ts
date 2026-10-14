@@ -2,6 +2,7 @@ import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
 import './eat.css'
 import './font.css'
 import { CAMERA_MIRRORED } from './camera'
+import { endAllScenarios, endScenario, startScenario, trackEvent } from './analytics'
 
 type Point = { x: number; y: number }
 type Mouth = Point & { width: number; angle: number; sourceX: number; sourceY: number; sourceWidth: number; lips: Point[] }
@@ -37,6 +38,8 @@ let openFrames = 0
 let phase: 'waiting' | 'flying' = 'waiting'
 let hasEaten = false
 let mouthOpen = false
+let hasOpenedMouth = false
+let breadCount = 0
 let nextBreadAt = 0
 let flightStart = 0
 let flightFrom: Point = { x: 0, y: 0 }
@@ -82,8 +85,9 @@ function updateMouth(landmarks: Landmark[], now: number, jawOpen?: number) {
   openness = distance(upper, lower) / Math.max(1, distance(left, right))
   if (openness > .26 || (jawOpen ?? 0) > .18) { openFrames++; if (openFrames >= 2) mouthOpen = true }
   else if (openness < .24 && (jawOpen ?? 0) < .13) { openFrames = 0; mouthOpen = false }
+  if (mouthOpen && !hasOpenedMouth) { hasOpenedMouth = true; trackEvent('mouth_opened') }
   if (!mouthOpen && phase === 'flying') {
-    hasEaten = true; phase = 'waiting'; bread.hidden = true
+    markEaten(); phase = 'waiting'; bread.hidden = true
   }
   if (mouthOpen && phase === 'waiting' && now >= nextBreadAt) startFlight(now)
 }
@@ -94,6 +98,12 @@ function startFlight(now: number) {
   bread.hidden = false
   const halfBread = bread.offsetWidth / 2
   flightFrom = { x: Math.min(innerWidth * .83, innerWidth - halfBread - 16), y: Math.min(innerHeight * .76, innerHeight - halfBread - 16) }
+}
+
+function markEaten() {
+  hasEaten = true
+  breadCount++
+  trackEvent('bread_eaten', { bread_count: breadCount })
 }
 
 function drawZoom() {
@@ -165,7 +175,7 @@ function updateBread(now: number) {
   bread.style.top = `${y}px`
   bread.style.opacity = String(Math.min(1, remaining * 13))
   bread.style.transform = `translate(-50%, -50%) rotate(${t * (reducedMotion.matches ? 180 : 900)}deg) scale(${scale})`
-  if (t >= 1) { hasEaten = true; phase = 'waiting'; bread.hidden = true; nextBreadAt = now + 350 }
+  if (t >= 1) { markEaten(); phase = 'waiting'; bread.hidden = true; nextBreadAt = now + 350 }
 }
 
 function loop(now: number) {
@@ -214,8 +224,10 @@ async function startCamera() {
       baseOptions: { modelAssetPath: `${base}models/face_landmarker.task`, delegate: 'CPU' },
       canvas: document.createElement('canvas'), runningMode: 'VIDEO', numFaces: 1, minTrackingConfidence: .5, outputFaceBlendshapes: true,
     })
+    trackEvent('camera_ready', { screen: 'eat' })
     frame = requestAnimationFrame(loop)
   } catch (error) {
+    trackEvent('camera_unavailable', { screen: 'eat' })
     const cameraOpened = video.readyState >= 2
     stream?.getTracks().forEach(track => track.stop())
     stream = undefined
@@ -230,9 +242,12 @@ async function startCamera() {
 }
 
 window.addEventListener('resize', resizeCanvas)
+document.querySelector<HTMLAnchorElement>('#home-link')!.addEventListener('click', () => endScenario('eat', 'home_button'))
 window.addEventListener('pagehide', () => {
+  endAllScenarios('page_exit')
   cancelAnimationFrame(frame)
   landmarker?.close()
   stream?.getTracks().forEach(track => track.stop())
 })
+startScenario('eat')
 void startCamera()
